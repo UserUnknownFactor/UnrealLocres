@@ -58,8 +58,6 @@ namespace UnrealLocres
             [Value(0, HelpText = "Input locres file path", MetaName = "InputPath", Required = true)]
             public string InputPath { get; set; }
 
-            [Option('f', "format", Default = "csv", HelpText = "Output format [pot, csv]")]
-            public string OutputFormat { get; set; }
 
             [Option('o', HelpText = "Output path including extension")]
             public string OutputPath { get; set; }
@@ -74,8 +72,6 @@ namespace UnrealLocres
             [Value(1, HelpText = "Input translation file path", MetaName = "TranslationInputPath", Required = true)]
             public string TranslationInputPath { get; set; }
 
-            [Option('f', "format", Default = "csv", HelpText = "Translation file input format [pot, csv]")]
-            public string TranslationInputFormat { get; set; }
 
             [Option('o', HelpText = "Translated locres file output path, default is [INPUT PATH].new")]
             public string LocresOutputPath { get; set; }
@@ -97,7 +93,7 @@ namespace UnrealLocres
 
         private static int ExportAndExit(ExportOptions opt)
         {
-            var ext = opt.OutputFormat.ToLower();
+            var ext = "csv";
 
             if (!GetExporter(ext, out var exporter))
             {
@@ -126,7 +122,7 @@ namespace UnrealLocres
 
         private static int ImportAndExit(ImportOptions opt)
         {
-            var ext = opt.TranslationInputFormat.ToLower();
+            var ext = "csv";
 
             if (!GetImporter(ext, out var importer))
             {
@@ -146,7 +142,7 @@ namespace UnrealLocres
 
             if (string.IsNullOrEmpty(outputPath))
             {
-                outputPath = opt.LocresInputPath + ".new";
+                outputPath = opt.LocresInputPath + "_translated";
             }
 
             var locres = new LocresFile();
@@ -224,7 +220,7 @@ namespace UnrealLocres
 
             if (string.IsNullOrEmpty(outputPath))
             {
-                outputPath = opt.TargetLocresPath + ".new";
+                outputPath = opt.TargetLocresPath + "_translated";
             }
             
             using (var file = File.Create(outputPath))
@@ -239,13 +235,11 @@ namespace UnrealLocres
 
         static int Main(string[] args)
         {
-            RegisterConverter(new PoConverter());
-            RegisterConverter(new CsvConverter());
+            RegisterConverter(new BaseConverter());
 
             var version = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
 
-            Console.WriteLine($"UnrealLocres v{version}");
-            Console.WriteLine("https://github.com/akintos/UnrealLocres");
+            Console.WriteLine($"Unreal Locres Unpacker/Repacker v{version}");
             Console.WriteLine("");
 
             var result = Parser.Default.ParseArguments<ExportOptions, ImportOptions, MergeOptions>(args)

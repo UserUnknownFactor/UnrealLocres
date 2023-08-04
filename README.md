@@ -4,35 +4,33 @@ UnrealEngine 4 `TextLocalizationResource` library and export/import tool built w
 Can read/write every locres version up to 3 (latest)
 
 ## Download
-Go to [releases](https://github.com/akintos/UnrealLocres/releases/latest) and download `UnrealLocres.exe`
+Go to Releases and download `UnrealLocres_v[version].zip`
 
 ## Usage
 `UnrealLocres` is a command line tool. You should use it in command line (cmd, powershell, etc.)
 
 ### Export
 ```
-usage: UnrealLocres.exe export locres_file_path [-f {csv,pot}] [-o output_path]
+usage: UnrealLocres.exe export locres_file_path [-o output_path]
 
 positional arguments:
   locres_file_path        Input locres file path
 
 optional arguments:
-  -f, --format {csv,pot}  Output file format (csv, pot)
-  -o                      Output file path (default: {locres_file_path}.{format})
+  -o                      Output file path (default: {locres_file_path}.csv)
 ```
 Export locres file. Default output format is csv.
 You should **never** change the key column. 
 
 ### Import
 ```
-usage: UnrealLocres.exe import locres_file_path translation_file_path [-f {csv,pot}] [-o output_path]
+usage: UnrealLocres.exe import locres_file_path translation_file_path [-o output_path]
 
 positional arguments:
   locres_file_path        Input locres file path
   translation_file_path   Input translation file path
 
 optional arguments:
-  -f, --format {csv,pot}  Translation file format (csv, pot)
   -o                      Output locres file path (default: {locres_file_path}.new)
 ```
 Import translation file into original locres file and create new translated locres file.
@@ -82,21 +80,3 @@ using (var file = File.Create(outputPath))
 
 ### UE4 Source code
 This library is based on original UE4 open source code
-
-[TextKey.cpp](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Private/Internationalization/TextKey.cpp)
-
-[TextKey.h](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Internationalization/TextKey.h)
-
-[TextLocalizationResourceVersion.h](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Internationalization/TextLocalizationResourceVersion.h)
-
-[TextLocalizationResource.h](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Internationalization/TextLocalizationResource.h)
-
-[TextLocalizationResource.cpp](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Private/Internationalization/TextLocalizationResource.cpp)
-
-[Crc.h](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Misc/Crc.h)
-
-[Crc.cpp](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Private/Misc/Crc.cpp)
-
-[CityHash.h](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Hash/CityHash.h)
-
-[CityHash.cpp](https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Private/Hash/CityHash.cpp)

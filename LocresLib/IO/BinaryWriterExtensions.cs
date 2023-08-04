@@ -13,10 +13,10 @@ namespace LocresLib.IO
                 if (value[i] > 127) return false;
             return true;
         }
-        
+
         internal static void WriteUnrealString(this BinaryWriter writer, string value, bool forceUnicode = false)
         {
-            value += "\x00";
+            value += "\0";
 
             if (!forceUnicode && IsAsciiString(value)) // ASCII
             {

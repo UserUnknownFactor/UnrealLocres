@@ -1,0 +1,41 @@
+name: Release the App
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  build:
+    permissions: write-all
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+      name: Checkout Code
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Install dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: msbuild UnrealLocres.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+    - name: Get the versioned name
+      id: get_version
+      run: echo "VERSIONED=UnrealLocres_${GITHUB_REF#refs/*/}.zip" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Pack release
+      run: Compress-Archive -Path UnrealLocres/bin/Release/net48/* -DestinationPath ${{ steps.get_version.outputs.VERSIONED }} -CompressionLevel Optimal
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref }}
+        file: ${{ steps.get_version.outputs.VERSIONED }}
+        overwrite: true

@@ -72,9 +72,7 @@ namespace LocresLib
                     else
                     {
                         for (int i = 0; i < localizedStringCount; i++)
-                        {
                             localizedStringArray[i] = reader.ReadUnrealString();
-                        }
                     }
 
                     reader.BaseStream.Position = tempOffset;
@@ -98,11 +96,10 @@ namespace LocresLib
 
                     for (int j = 0; j < keyCount; j++)
                     {
+                        uint stringKeyHash;
                         if (Version >= LocresVersion.Optimized)
-                        {
-                            var stringKeyHash = reader.ReadUInt32();
-                        }
-                        
+                            stringKeyHash = reader.ReadUInt32();
+
                         string stringKey = reader.ReadUnrealString();
                         uint sourceStringHash = reader.ReadUInt32();
 
@@ -114,9 +111,7 @@ namespace LocresLib
                             localizedString = localizedStringArray[stringIndex];
                         }
                         else
-                        {
                             localizedString = reader.ReadUnrealString();
-                        }
 
                         ns.Add(new LocresString(stringKey, localizedString, sourceStringHash));
                     }
@@ -134,23 +129,23 @@ namespace LocresLib
             if (!stream.CanWrite)
                 throw new ArgumentException("Stream must be writeable.");
 
-            using (BinaryWriter w = new BinaryWriter(stream))
+            using (var writer = new BinaryWriter(stream))
             {
                 if (outputVersion == LocresVersion.Legacy)
                 {
-                    SaveLegacy(w);
+                    SaveLegacy(writer);
                     return;
                 }
 
-                w.Write(LOCRES_MAGIC);                  // byte LOCRES_MAGIC[16]
-                w.Write((byte)outputVersion);           // byte version
-                long arrayOffset = w.BaseStream.Position;
-                w.Write((long)0);                       // long localizedStringArrayOffset
+                writer.Write(LOCRES_MAGIC);                  // byte LOCRES_MAGIC[16]
+                writer.Write((byte)outputVersion);           // byte version
+                long arrayOffset = writer.BaseStream.Position;
+                writer.Write((long)0);                       // long localizedStringArrayOffset
 
                 if (outputVersion >= LocresVersion.Optimized)
-                    w.Write(0); // int localizedStringEntryCount
+                    writer.Write(0); // int localizedStringEntryCount
 
-                w.Write(Count); // int namespaceCount
+                writer.Write(Count); // int namespaceCount
 
                 var stringTable = new List<StringTableEntry>();
                 int localizedStringEntryCount = 0;
@@ -158,22 +153,22 @@ namespace LocresLib
                 foreach (var localizationNamespace in this)
                 {
                     if (outputVersion == LocresVersion.Optimized_CityHash64_UTF16)
-                        w.Write(CityHash64_utf16_to_uint32(localizationNamespace.Name));
+                        writer.Write(CityHash64_utf16_to_uint32(localizationNamespace.Name));
                     else if (outputVersion >= LocresVersion.Optimized)
-                        w.Write(Crc.StrCrc32(localizationNamespace.Name));
+                        writer.Write(Crc.StrCrc32(localizationNamespace.Name));
 
-                    w.WriteUnrealString(localizationNamespace.Name);
-                    w.Write(localizationNamespace.Count); // int localizaedStringCounnt
+                    writer.WriteUnrealString(localizationNamespace.Name);
+                    writer.Write(localizationNamespace.Count); // int localizaedStringCounnt
 
                     foreach (var localizedString in localizationNamespace)
                     {
                         if (outputVersion == LocresVersion.Optimized_CityHash64_UTF16)
-                            w.Write(CityHash64_utf16_to_uint32(localizedString.Key));
+                            writer.Write(CityHash64_utf16_to_uint32(localizedString.Key));
                         else if (outputVersion == LocresVersion.Optimized)
-                            w.Write(Crc.StrCrc32(localizedString.Key));
+                            writer.Write(Crc.StrCrc32(localizedString.Key));
 
-                        w.WriteUnrealString(localizedString.Key);
-                        w.Write(localizedString.SourceStringHash);
+                        writer.WriteUnrealString(localizedString.Key);
+                        writer.Write(localizedString.SourceStringHash);
 
                         int stringTableIndex = stringTable.FindIndex(x => x.Text == localizedString.Value);
 
@@ -187,63 +182,63 @@ namespace LocresLib
                             stringTable[stringTableIndex].RefCount += 1;
                         }
 
-                        w.Write(stringTableIndex);
+                        writer.Write(stringTableIndex);
                         localizedStringEntryCount += 1;
                     }
                 }
 
-                long stringTableOffset = w.BaseStream.Position;
+                long stringTableOffset = writer.BaseStream.Position;
 
-                w.Write(stringTable.Count);
+                writer.Write(stringTable.Count);
 
                 if (outputVersion >= LocresVersion.Optimized)
                 {
                     foreach (var entry in stringTable)
                     {
-                        w.WriteUnrealString(entry.Text);
-                        w.Write(entry.RefCount);
+                        writer.WriteUnrealString(entry.Text);
+                        writer.Write(entry.RefCount);
                     }
                 }
                 else
                 {
                     foreach (var entry in stringTable)
                     {
-                        w.WriteUnrealString(entry.Text);
+                        writer.WriteUnrealString(entry.Text);
                     }
                 }
 
-                w.BaseStream.Position = arrayOffset;
-                w.Write(stringTableOffset); // long localizedStringArrayOffset
+                writer.BaseStream.Position = arrayOffset;
+                writer.Write(stringTableOffset); // long localizedStringArrayOffset
 
                 if (outputVersion >= LocresVersion.Optimized)
-                    w.Write(localizedStringEntryCount);
+                    writer.Write(localizedStringEntryCount);
 
                 stream.Seek(0, SeekOrigin.End);
             }
         }
 
-        private void SaveLegacy(BinaryWriter w)
+        private void SaveLegacy(BinaryWriter writer)
         {
-            w.Write(Count); // int namespaceCount
+            writer.Write(Count); // int namespaceCount
 
             foreach (var localizationNamespace in this)
             {
-                w.WriteUnrealString(localizationNamespace.Name, forceUnicode: true);
-                w.Write(localizationNamespace.Count);
+                writer.WriteUnrealString(localizationNamespace.Name, forceUnicode: true);
+                writer.Write(localizationNamespace.Count);
 
                 foreach (var localizedString in localizationNamespace)
                 {
-                    w.WriteUnrealString(localizedString.Key);
-                    w.Write(localizedString.SourceStringHash);
-                    w.WriteUnrealString(localizedString.Value);
+                    writer.WriteUnrealString(localizedString.Key);
+                    writer.Write(localizedString.SourceStringHash);
+                    writer.WriteUnrealString(localizedString.Value);
                 }
             }
         }
 
         /// <summary>
-        ///     Encode string with UTF-16-LE, calculate CityHash64 and get uint32 hash of cityhash.
-        ///     <br/>
-        ///     uint64 to uint32 hash function: https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/Core/Public/Templates/TypeHash.h#L81
+        ///     Encode string with UTF-16-LE, calculate CityHash64 and get uint32 hash of cityhash.<br/>
+        ///     uint64 to uint32 hash function: <br/>
+        ///         Engine/Source/Runtime/Core/Public/Templates/TypeHash.h#L81
         /// </summary>
         /// <param name="s">Input string</param>
         /// <returns>uint32 hash of CityHash64 hash of input string</returns>

@@ -12,7 +12,7 @@ namespace LocresLib
         /// <summary>
         /// <see cref="Crc.StrCrc32"/> hash of source string.
         /// </summary>
-        public uint SourceStringHash { get; } 
+        public uint SourceStringHash { get; set; }
 
         public LocresString(string key, string value, uint sourceStringHash)
         {
