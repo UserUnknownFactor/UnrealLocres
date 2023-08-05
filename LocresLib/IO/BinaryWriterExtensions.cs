@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace LocresLib.IO
@@ -9,9 +10,7 @@ namespace LocresLib.IO
     {
         internal static bool IsAsciiString(string value)
         {
-            for (int i = 0; i < value.Length; i++)
-                if (value[i] > 127) return false;
-            return true;
+            return value.All(ch => ch < 128);
         }
 
         internal static void WriteUnrealString(this BinaryWriter writer, string value, bool forceUnicode = false)
