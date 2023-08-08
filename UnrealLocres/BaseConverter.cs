@@ -55,25 +55,22 @@ namespace UnrealLocres.Converter
             using (var file = File.OpenRead(inputPath))
             using (var reader = new StreamReader(file)) {
                 data = Read(reader);
-                Console.WriteLine($"Loaded {inputPath}");
+                Console.WriteLine($"Loaded translations from {inputPath}");
             }
 
-            var translatedList = data.Where(x => !string.IsNullOrEmpty(x.Target)).ToList();
+            var translatedList = data.Where(x => !string.IsNullOrEmpty(x.Target) && !string.IsNullOrEmpty(x.Key)).ToList();
             int replaced = 0;
             int translated = translatedList.Count;
             var dict = translatedList.GroupBy(p => p.Key, StringComparer.OrdinalIgnoreCase)
                                                    .ToDictionary(x => x.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
-            Console.WriteLine($"Loaded {translatedList.Count} unique rows...");
+            Console.WriteLine($"Found {translatedList.Count} data rows");
             uint total = 0;
             foreach (LocresNamespace lr_ns in locres) {
                 foreach (LocresString lr_str in lr_ns) {
                     total++;
                     var key = (!string.IsNullOrWhiteSpace(lr_ns.Name) ? lr_ns.Name + "/" : "") + lr_str.Key;
                     if (dict.TryGetValue(key, out var item)) {
-                        if (string.IsNullOrEmpty(item.Target))
-                            continue;
-
                         lr_str.Value = item.Target;
                         dict.Remove(key);
                         replaced++;
@@ -94,9 +91,15 @@ namespace UnrealLocres.Converter
                     lr_ns.AddRange(newItems);
             }
 
-            var translatedp = ((double)translated/(double)(total + dict.Count)).ToString("P", CultureInfo.InvariantCulture);
-            var replacedp = ((double)replaced/(double)total).ToString("P", CultureInfo.InvariantCulture);
-            Console.WriteLine($"\nImported {dict.Count} ({translatedp}) new translations.\nReplaced {replaced} of {total} ({replacedp}) original translations.");
+            var translatedp = "";
+            if (total > 0) {
+                translatedp = " (" + ((double)translated/(double)(total + dict.Count)).ToString("P", CultureInfo.InvariantCulture) + ")";
+            }
+            Console.WriteLine($"\nImported {dict.Count}{translatedp} new unique translations");
+            if (total > 0) {
+                var replacedp  = " (" + ((double)replaced/(double)total).ToString("P", CultureInfo.InvariantCulture) + ")";
+                Console.WriteLine($"Replaced {replaced} of {total}{replacedp} original translations");
+            }
         }
 
         protected List<TranslationEntry> Read(TextReader stream) {

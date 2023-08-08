@@ -121,7 +121,7 @@ namespace LocresLib
             }
         }
 
-        public void Save(Stream stream, LocresVersion outputVersion = LocresVersion.Compact)
+        public void Save(Stream stream, LocresVersion outputVersion = LocresVersion.Compact, LocresEncoding outputEncoding = LocresEncoding.Auto)
         {
             if (!stream.CanSeek)
                 throw new ArgumentException("Stream must be seekable.");
@@ -195,7 +195,7 @@ namespace LocresLib
                 {
                     foreach (var entry in stringTable)
                     {
-                        writer.WriteUnrealString(entry.Text);
+                        writer.WriteUnrealString(entry.Text, outputEncoding);
                         writer.Write(entry.RefCount);
                     }
                 }
@@ -203,7 +203,7 @@ namespace LocresLib
                 {
                     foreach (var entry in stringTable)
                     {
-                        writer.WriteUnrealString(entry.Text);
+                        writer.WriteUnrealString(entry.Text, outputEncoding);
                     }
                 }
 
@@ -223,7 +223,7 @@ namespace LocresLib
 
             foreach (var localizationNamespace in this)
             {
-                writer.WriteUnrealString(localizationNamespace.Name, forceUnicode: true);
+                writer.WriteUnrealString(localizationNamespace.Name, LocresEncoding.UTF16);
                 writer.Write(localizationNamespace.Count);
 
                 foreach (var localizedString in localizationNamespace)
@@ -251,6 +251,15 @@ namespace LocresLib
             ulong h = CityHash.CityHash64(b);
             uint r = (uint)h + ((uint)(h >> 32) * 23);
             return r;
+        }
+
+        /// <summary>
+        ///     Removes original content of each of original localization namespaces.
+        /// </summary>
+        public void Cleanup()
+        {
+            foreach (var localizationNamespace in this)
+                localizationNamespace.Clear();
         }
 
         private sealed class StringTableEntry

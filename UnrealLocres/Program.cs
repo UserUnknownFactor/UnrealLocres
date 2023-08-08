@@ -72,9 +72,14 @@ namespace UnrealLocres
             [Value(1, HelpText = "Input translation file path", MetaName = "TranslationInputPath", Required = true)]
             public string TranslationInputPath { get; set; }
 
-
-            [Option('o', HelpText = "Translated locres file output path, default is [INPUT PATH].new")]
+            [Option('o', HelpText = "(Default: [INPUT PATH].new) Translated locres file output path")]
             public string LocresOutputPath { get; set; }
+
+            [Option('e', HelpText = "Encoding of the output strings; 0 = Auto, 1 = UTF-16, 2 = Force ASCII", Default=0)]
+            public int LocresOutputEncoding { get; set; }
+
+            [Option('c', HelpText = "Cleanup old items", Default=false)]
+            public bool RemoveOldItems { get; set; }
         }
 
 
@@ -87,8 +92,11 @@ namespace UnrealLocres
             [Value(1, HelpText = "Merge source locres file path, the file that has additional lines", MetaName = "SourceLocresPath", Required = true)]
             public string SourceLocresPath { get; set; }
 
-            [Option('o', HelpText = "Merged locres file output path, default is [TargetLocresPath].new")]
+            [Option('o', HelpText = "(Default: [TargetLocresPath].new) Merged locres file output path")]
             public string LocresOutputPath { get; set; }
+
+            [Option('e', HelpText = "Encoding of the output strings; 0 = Auto, 1 = UTF-16, 2 = Force ASCII", Default=0)]
+            public int LocresOutputEncoding { get; set; }
         }
 
         private static int ExportAndExit(ExportOptions opt)
@@ -102,18 +110,13 @@ namespace UnrealLocres
             }
 
             string outputPath = opt.OutputPath;
-
             if (string.IsNullOrEmpty(outputPath))
-            {
                 outputPath = Path.GetFileNameWithoutExtension(opt.InputPath) + "." + ext;
-            }
 
             var locres = new LocresFile();
 
             using (var file = File.OpenRead(opt.InputPath))
-            {
                 locres.Load(file);
-            }
 
             exporter.Export(locres, outputPath);
 
@@ -134,32 +137,30 @@ namespace UnrealLocres
 
             if (!File.Exists(translationPath))
             {
-                Console.Error.WriteLine($"Failed to find translation input file {translationPath}");
+                Console.Error.WriteLine($"Failed to find translation input file: {translationPath}");
                 return 2;
             }
 
             string outputPath = opt.LocresOutputPath;
 
             if (string.IsNullOrEmpty(outputPath))
-            {
                 outputPath = opt.LocresInputPath + "_translated";
-            }
 
             var locres = new LocresFile();
 
             using (var file = File.OpenRead(opt.LocresInputPath))
-            {
                 locres.Load(file);
-            }
 
+            if (opt.RemoveOldItems) {
+                Console.WriteLine($"Cleared old strings...");
+                locres.Cleanup();
+            }
             importer.Import(locres, opt.TranslationInputPath);
 
             using (var file = File.Create(outputPath))
-            {
-                locres.Save(file, locres.Version);
-            }
+                locres.Save(file, locres.Version, (LocresEncoding)opt.LocresOutputEncoding);
 
-            Console.WriteLine($"Saved to {outputPath}");
+            Console.WriteLine($"Saved to {outputPath} (Encoding: {(LocresEncoding)opt.LocresOutputEncoding})");
 
             return 0;
         }
@@ -171,9 +172,7 @@ namespace UnrealLocres
             try
             {
                 using (var file = File.OpenRead(opt.TargetLocresPath))
-                {
                     targetLocres.Load(file);
-                }
             }
             catch (IOException)
             {
@@ -186,13 +185,11 @@ namespace UnrealLocres
             try
             {
                 using (var file = File.OpenRead(opt.SourceLocresPath))
-                {
                     sourceLocres.Load(file);
-                }
             }
             catch (IOException)
             {
-                Console.Error.WriteLine($"Failed to open merge source locres file {opt.SourceLocresPath}");
+                Console.Error.WriteLine($"Failed to open merge source locres file: {opt.SourceLocresPath}");
                 throw;
             }
 
@@ -219,16 +216,12 @@ namespace UnrealLocres
             string outputPath = opt.LocresOutputPath;
 
             if (string.IsNullOrEmpty(outputPath))
-            {
                 outputPath = opt.TargetLocresPath + "_translated";
-            }
-            
-            using (var file = File.Create(outputPath))
-            {
-                targetLocres.Save(file, targetLocres.Version);
-            }
 
-            Console.WriteLine($"\nSaved to {outputPath}");
+            using (var file = File.Create(outputPath))
+                targetLocres.Save(file, targetLocres.Version, (LocresEncoding)opt.LocresOutputEncoding);
+
+            Console.WriteLine($"\nSaved to {outputPath} (Encoding: {(LocresEncoding)opt.LocresOutputEncoding})");
 
             return 0;
         }
