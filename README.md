@@ -1,7 +1,7 @@
 # UnrealLocres
 UnrealEngine 4 `TextLocalizationResource` library and export/import tool built with C#.
 
-Can read/write every locres version up to 3 (latest)
+Can read/write every .locres version up to 3
 
 ## Download
 Go to Releases and download `UnrealLocres_v[version].zip`
